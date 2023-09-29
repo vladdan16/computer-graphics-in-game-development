@@ -40,6 +40,13 @@ void cg::renderer::rasterization_renderer::render()
 		auto processed = mul(matrix, vertex);
 		return std::make_pair(processed, data);
 	};
+	rasterizer->pixel_shader = [](const cg::vertex& data, const float z) {
+		return cg::color{
+				data.ambient_r,
+				data.ambient_g,
+				data.ambient_b,
+		};
+	};
 
 	auto start = std::chrono::high_resolution_clock::now();
 	rasterizer->clear_render_target({111, 5, 243});
@@ -59,9 +66,6 @@ void cg::renderer::rasterization_renderer::render()
 	std::cout << "Rendering took: " << rendering_duration.count() << "ms" << std::endl;
 
 	cg::utils::save_resource(*render_target, settings->result_path);
-
-	// TODO Lab: 1.05 Implement `pixel_shader` lambda for the instance of `cg::renderer::rasterizer`
-	// TODO Lab: 1.03 Adjust `cg::renderer::rasterization_renderer` class to consume `cg::world::model`
 }
 
 void cg::renderer::rasterization_renderer::destroy() {}
