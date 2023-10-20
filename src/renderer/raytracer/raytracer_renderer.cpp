@@ -32,7 +32,9 @@ void cg::renderer::ray_tracing_renderer::init()
 	raytracer->set_vertex_buffers(model->get_vertex_buffers());
 	raytracer->set_index_buffers(model->get_index_buffers());
 
-	// TODO Lab: 2.03 Add light information to `lights` array of `ray_tracing_renderer`
+	lights.push_back({float3{0.f, 1.58f, -0.03f},
+					  float3{0.78f, 0.78f, 0.78f}});
+
 	// TODO Lab: 2.04 Initialize `shadow_raytracer` in `ray_tracing_renderer`
 }
 
@@ -47,9 +49,22 @@ void cg::renderer::ray_tracing_renderer::render()
 		payload.color = {0.f, 0.f, (ray.direction.y + 1.f) / 2.f};
 		return payload;
 	};
-	raytracer->closest_hit_shader = [](const ray& ray, payload& payload, const triangle<cg::vertex>& triangle,
+	raytracer->closest_hit_shader = [&](const ray& ray, payload& payload, const triangle<cg::vertex>& triangle,
 									   size_t depth) {
-		payload.color = cg::color::from_float3(triangle.diffuse);
+		float3 position = ray.position + ray.direction * payload.t;
+		float3 normal = payload.bary.x * triangle.na +
+						payload.bary.y * triangle.nb +
+						payload.bary.z * triangle.nc;
+		float3 res_color = triangle.emissive;
+
+		for (auto& light: lights)
+		{
+			cg::renderer::ray to_light(position, light.position - position);
+			res_color += light.color * triangle.diffuse *
+						 std::max(0.f, dot(normal, to_light.direction));
+		}
+
+		payload.color = cg::color::from_float3(res_color);
 		return payload;
 	};
 
@@ -70,8 +85,6 @@ void cg::renderer::ray_tracing_renderer::render()
 
 
 	cg::utils::save_resource(*render_target, settings->result_path);
-	// TODO Lab: 2.02 Add `closest_hit_shader` to `raytracer` class to return diffuse color
-	// TODO Lab: 2.03 Adjust `closest_hit_shader` of `raytracer` to implement Lambertian shading model
 	// TODO Lab: 2.04 Define `any_hit_shader` and `miss_shader` for `shadow_raytracer`
 	// TODO Lab: 2.04 Adjust `closest_hit_shader` of `raytracer` to cast shadows rays and to ignore occluded lights
 	// TODO Lab: 2.05 Adjust `ray_tracing_renderer` class to build the acceleration structure
