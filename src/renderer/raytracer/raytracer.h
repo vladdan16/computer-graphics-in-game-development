@@ -213,7 +213,7 @@ namespace cg::renderer
 					ray primary_ray(position, ray_direction);
 					payload payload = trace_ray(primary_ray, depth);
 
-					history->item(x, y) += payload.color.to_float3() / accumulation_num;
+					history->item(x, y) += sqrt(payload.color.to_float3() / accumulation_num);
 					if (frame_id == accumulation_num - 1)
 					{
 						render_target->item(x, y) = RT::from_float3(history->item(x, y));
